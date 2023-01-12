@@ -22,6 +22,10 @@ export class Game {
   private speedModifier = 5;
   private animationFrames: number | null = null;
 
+  private activeKey: Key | null = null;
+  private verticalMovementTimestamp = -1;
+  private verticalSpeed = 30;
+
   private ticks = 0;
   private collapseCount = 0;
   private score = 0;
@@ -60,6 +64,7 @@ export class Game {
 
     const disposer = keyboard.init();
     keyboard.events.on('key', this.onKey);
+    keyboard.events.on('keyUp', this.onKeyUp);
     renderer.start();
     this.start();
 
@@ -69,6 +74,7 @@ export class Game {
     return () => {
       disposer();
       keyboard.events.off('key', this.onKey);
+      keyboard.events.off('keyUp', this.onKeyUp);
       cancelAnimationFrame(this.frameId);
       renderer.stop();
       this.stop();
@@ -83,18 +89,22 @@ export class Game {
     cancelAnimationFrame(this.frameId);
   }
 
+  onKeyUp = () => {
+    this.activeKey = null;
+  }
+
   onKey = ({ key }: { key: Key }) => {
-    if (key === 'L' || key == 'R') {
+    this.activeKey = key;
+
+    if (this.currentShape && (key === 'L' || key === 'R')) {
       const dx = key === 'L' ? -1 : 1;
-
-      if (this.currentShape) {
-        this.currentShape.move({ dx });
-
-        if (!this.board.canPlaceShape(this.currentShape)) {
-          this.currentShape.move({ dx: -dx });
-        }
+  
+      this.currentShape.move({ dx });
+  
+      if (!this.board.canPlaceShape(this.currentShape)) {
+        this.currentShape.move({ dx: -dx });
       }
-    } else if (key === "U") {
+    } else if (key === 'U') {
       if (this.currentShape) {
         this.currentShape.rotate(true);
 
@@ -102,14 +112,24 @@ export class Game {
           this.currentShape.rotate(false);
         }
       }
-    } else if (key === "D") {
-      if (this.currentShape) {
-        this.currentShape.move({ dy: 1})
+    }
+  }
 
-        if (!this.board.canPlaceShape(this.currentShape)) {
-          this.currentShape.move({ dy: -1 });
-        }
-      } 
+  processVerticalMovement() {
+    const now = Date.now();
+    const elapsed = now - this.verticalMovementTimestamp;
+    const key = this.activeKey;
+
+    if (!this.currentShape || key !== 'D' || elapsed < this.verticalSpeed) {
+      return;
+    }
+
+    this.verticalMovementTimestamp = now - (elapsed % this.verticalSpeed);
+
+    this.currentShape.move({ dy: 1})
+
+    if (!this.board.canPlaceShape(this.currentShape)) {
+      this.currentShape.move({ dy: -1 });
     }
   }
 
@@ -118,6 +138,8 @@ export class Game {
 
     const now = Date.now();
     const elapsed = now - this.timestamp;
+
+    this.processVerticalMovement();
 
     if (elapsed < this.speed) {
       return;
@@ -165,7 +187,7 @@ export class Game {
     }
 
     this.currentShape.move({ dy: 1 });
- 
+
     if (!this.board.canPlaceShape(this.currentShape)) {
       this.currentShape.move({ dy: -1 });
 

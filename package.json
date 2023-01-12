@@ -13,6 +13,7 @@
     "vite": "^4.0.0"
   },
   "dependencies": {
-    "eventemitter3": "^5.0.0"
+    "eventemitter3": "^5.0.0",
+    "retrotype": "^0.0.1"
   }
 }

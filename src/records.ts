@@ -1,13 +1,14 @@
 const defaultRecords: [string, number][] = [
   ['coolkid', 100000],
-  ['madman', 50000],
-  ['metroid', 25000],
+  ['zer0', 50000],
+  ['max', 40000],
+  ['droid', 25000],
   ['crasher', 10000]
 ];
 
 export class Records {
   records: [string, number][] = [];
-  count = 4;
+  count = 5;
 
   constructor() {
     this.records = this.read();
@@ -38,12 +39,11 @@ export class Records {
 
   saveRecord(score: number) {
     const nickname = prompt('Congratulations! Write your nickname.') ?? 'anonymous';
-    let index = -1;
+    let index = 0;
 
-    for (let i = this.records.length - 1; i >= 0; i--) {
-      if (score < this.records[i][1]) {
-        index = i + 1;
-        break;
+    for (let i = 1; i < this.records.length; i++) {
+      if (score <= this.records[i - 1][1] && score > this.records[i][1]) {
+        index = i;
       }
     }
 

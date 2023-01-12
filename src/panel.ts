@@ -1,5 +1,5 @@
-import { AlphaNums } from './ascii';
 import { Shape } from './shape';
+import { Writer, Mono_5x7 } from 'retrotype';
 
 export interface PanelParams {
   context: CanvasRenderingContext2D;
@@ -7,6 +7,8 @@ export interface PanelParams {
 
 export class Panel {
   context: CanvasRenderingContext2D;
+  writer: Writer;
+  symbolWidth: number;
   size = 3;
   gap = 0;
   y0: number;
@@ -17,6 +19,13 @@ export class Panel {
   constructor({ context }: PanelParams) {
     this.context = context;
 
+    this.writer = new Writer({
+      context,
+      font: Mono_5x7,
+    });
+
+    this.symbolWidth = (Mono_5x7.symbol_width * 2) + (Mono_5x7.default_inter_letter_width ?? 0);
+
     this.y0 = 16;
     this.x0 = 15 * (1 + 15) + 15 * 2;
     this.y1 = 510;
@@ -26,120 +35,135 @@ export class Panel {
   }
 
   drawBoard() {
-    const { y0, x0 } = this;
+    const { symbolWidth } = this;
 
-    this.drawText('level'.padStart(8), { y: y0, x: x0, color: '#999' })
-    this.drawText('score'.padStart(8), { y: y0 + 70, x: x0, color: '#999' });
-    this.drawText('next'.padStart(8), { y: y0 + 140, x: x0, color: '#999' })
-    this.drawText('records'.padStart(8), { y: y0 + 240, x: x0, color: '#999' });
-  }
+    this.writer.write('LEVEL', {
+      size: 2,
+      gap: 0,
+      color: 0x999999,
+      padding: 4,
+      area: { x: 270 + (symbolWidth * 6), y: 11, width: 140, height: 23 }
+    });
 
-  drawText(str: string, options: {
-    y: number;
-    x: number;
-    color?: string;
-    size?: number;
-    gap?: number;
-    offset?: number;
-  }) {
-    const { context } = this;
-    const { y, x, color = '#444', size = 3, gap = 0, offset = 5 } = options;
+    this.writer.write('SCORE', {
+      size: 2,
+      gap: 0,
+      color: 0x999999,
+      padding: 4,
+      area: { x: 270 + (symbolWidth * 6), y: 80, width: 140, height: 23 }
+    });
 
-    context.fillStyle = color;
+    this.writer.write('NEXT', {
+      size: 2,
+      gap: 0,
+      color: 0x999999,
+      padding: 4,
+      area: { x: 270 + (symbolWidth * 7), y: 155, width: 140, height: 23 }
+    });
 
-    let dx = 0;
-
-    for (let i = 0; i < str.length; i++) {
-      const char = str[i].toUpperCase();
-
-      if (char in AlphaNums === false) {
-        throw new Error(`Symbol ${char} is not supported.`);
-      }
-
-      const grid = AlphaNums[char];
-
-      for (let row = 0; row < grid.length; row++) {
-        const row_dy = row * size;
-
-        for (let col = 0; col < grid[row].length; col++) {
-          const col_dx = col * size;
-
-          if (grid[row][col] === 1) {
-            const offset_y = y + gap * row + row_dy;
-            const offset_x = x + gap * col + col_dx + dx;
-
-            context.fillRect(offset_x, offset_y, size, size);
-          }
-        }
-      }
-
-      dx += (size + gap) * offset;
-    }
+    this.writer.write('RECORDS', {
+      size: 2,
+      gap: 0,
+      color: 0x999999,
+      padding: 4,
+      area: { x: 270 + (symbolWidth * 4), y: 265, width: 140, height: 23 }
+    });
   }
 
   drawGameOver() {
-    const { context } = this;
+    const { writer } = this;
 
-    context.fillStyle = '#ddd';
-    context.fillRect(40, 190, 194, 34);
-
-    context.fillStyle = '#000';
-    this.drawText('game over', {
-      y: 196,
-      x: 50,
-      size: 4
-    })
+    writer.animate('GAME OVER!', {
+      area: { x: 14, y: 190, width: 240, height: 50 },
+      padding: 10,
+      size: 4,
+      clear_background_color: 0xdddddd,
+      color: 0x000000
+    }, {
+      fps: 15
+    });
   }
 
   updateScore(score: number) {
-    const { context, y0, x0 } = this;
+    const { symbolWidth, writer } = this;
+    const str = String(score)
 
-    const str = String(score).padStart(8, ' ');
-    context.clearRect(x0, y0 + 94, 122, 20);
-    this.drawText(str, { y: y0 + 94, x: x0, color: '#000' });
+    writer.write(str, {
+      size: 2,
+      gap: 0,
+      color: 0x000000,
+      clear_background_color: 0xffffff,
+      padding: 4,
+      area: { x: 270 + (symbolWidth * (11 - str.length)), y: 105, width: 140, height: 23 }
+    });
   }
 
   updateLevel(level: number) {
-    const { context, y0, x0, size } = this;
+    const { symbolWidth, writer } = this;
+    const str = String(level)
 
-    const str = String(level).padStart(8, ' ');
-    context.clearRect(x0, y0 + 24, 122, 20);
-    this.drawText(str, { y: y0 + 8 * size, x: x0, color: '#000' });  }
+    writer.write(str, {
+      size: 2,
+      gap: 0,
+      color: 0x000000,
+      clear_background_color: 0xffffff,
+      padding: 4,
+      area: { x: 270 + (symbolWidth * (11 - str.length)), y: 35, width: 140, height: 23 }
+    });
+  }
 
   updateNext(next: Shape) {
     const { context, y0, x0 } = this;
 
-    const y = y0 + 170;
-    const x = x0 + 116;
-
     const pixelSize = 15;
     const pixelGap = 1;
+    const finalSize = pixelSize + pixelGap;
+
+    const y = y0 + 170;
+    const x = x0 + 116 + finalSize;
 
     const width = next.grid[0].length;
 
     context.fillStyle = "#fff";
-    context.fillRect(x0, y0 + 160, 124, 60);
+    context.fillRect(330, y, 124, 60);
 
     context.fillStyle = '#000';
 
     for (const [dy, dx] of next.points) {
-      context.fillRect(x + dx * (pixelSize + pixelGap) - (width * (pixelSize + pixelGap)), y + dy * (pixelSize + pixelGap), pixelSize, pixelSize);
+      context.fillRect(x + dx * finalSize - (width * finalSize), y + dy * finalSize, pixelSize, pixelSize);
     }
   }
 
   updateRecords(records: [string, number][]) {
-    const { context, x0 } = this;
+    const { context, writer } = this;
+    const symbolWidth = Mono_5x7.symbol_width + (Mono_5x7.default_inter_letter_width ?? 0);
+    const y0 = 300;
 
     context.fillStyle = '#fff';
-    context.fillRect(x0, 300, 130, 180);
-
-    let y = 300;
+    context.fillRect(270, y0, 140, 198);
 
     for (let i = 0; i < records.length; i++) {
-      const [str, record] = records[i];
+      const [str, _record] = records[i];
+      const record = String(_record);
+      const dy = y0 + i * 40;
 
-      this.drawText(str.padStart(12), { y: y + (i * 50), x: x0, size: 2 });
-      this.drawText(String(record).padStart(12), { y: y + (i * 50) + 20, x: x0, size: 2, color: '#999' });
+      writer.write(str, {
+        area: { x: 270 + (symbolWidth * (19 - str.length)), y: dy, width: 140, height: 23 },
+        padding: 4,
+        clear_background_color: 0xffffff,
+        color: 0x000000,
+        size: 1,
+        gap: 0,
+      });
+
+      writer.write(record, {
+        area: { x: 270 + (symbolWidth * (19 - record.length)), y: dy + 15, width: 140, height: 23 },
+        padding: 4,
+        clear_background_color: 0xffffff,
+        color: 0x999999,
+        size: 1,
+        gap: 0,
+      });
     }
   }
 }

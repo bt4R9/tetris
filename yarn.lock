@@ -202,6 +202,11 @@ resolve@^1.22.1:
     path-parse "^1.0.7"
     supports-preserve-symlinks-flag "^1.0.0"
 
+retrotype@^0.0.1:
+  version "0.0.1"
+  resolved "https://registry.npmjs.org/retrotype/-/retrotype-0.0.1.tgz#fef61bd14a9fc08999bb7ffde21ff4b1a72885d0"
+  integrity sha512-6JeGVWoUcg0tpbNpb8Mjq8thKhygejCNIyy8KzpnFSdcYg2MLg7gDu+AFNi4PgDeUUFzp/jVu+9vX8AJoFnZ4w==
+
 rollup@^3.7.0:
   version "3.7.5"
   resolved "https://registry.yarnpkg.com/rollup/-/rollup-3.7.5.tgz#db580f8eda50237b0721ddea301fb981cd992933"
